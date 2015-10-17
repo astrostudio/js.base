@@ -1,0 +1,12 @@
+{
+    "name": "lison/js.base",
+    "description": "Utility function",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "composer/installers": "*"
+    },
+    "extra": {
+        "installer-name": "Base"
+    }
+}
