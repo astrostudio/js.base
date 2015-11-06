@@ -27,7 +27,7 @@
                         this_.select.call(this_,this_.rows[i],e);
                     }
                 });
-                
+
                 $browser.append($row);
             }
         };
@@ -62,7 +62,7 @@
                     this_.rows=data.rows||[];
                     this_.page=data.page||1;
                     this_.page=parseInt(this_.page);
-                    this_.total=data.records||0;                    
+                    this_.total=data.total||0;
                     this_.pages=this_.total>0?Math.ceil(this_.total/this_.limit):0;
                     this_.redraw();
                     this_.listeners.update('reload');                    
@@ -96,7 +96,9 @@
         this.id=id;
         this.browser=browser;
         this.browser.listeners.append(function(){
-            $pager.find('.'+Base.Browser.classPrefix+'-page').val(this.page||'');
+            console.log(this);
+            $pager.find('input.'+Base.Browser.classPrefix+'-page').val(this.page);
+            $pager.find('.'+Base.Browser.classPrefix+'-page').html(this.page);
             $pager.find('.'+Base.Browser.classPrefix+'-sorter').val(this.sorter);
             $pager.find('.'+Base.Browser.classPrefix+'-limit').val(this.limit);
             $pager.find('.'+Base.Browser.classPrefix+'-pages').html(this.pages);
