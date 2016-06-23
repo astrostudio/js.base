@@ -22,7 +22,12 @@ var Base;
         
         return(view);
     };
-    
+
+    Base.extend=function(child,parent){
+        child.prototype=Object.create(parent.prototype);
+        child.prototype.constructor=child;
+    };
+
     Base.cookie=function(name,value,time,domain){
         if(null!=value){
             if(!time){
@@ -145,7 +150,30 @@ var Base;
         
         return(data);
     };
-    
+
+    Base.__flatten=function(data,sep){
+        var result={};
+
+        for(var key in data){
+            if(!(data[key] instanceof Object)){
+                result[key]=data[key];
+            }
+            else {
+                var r=Base.__flatten(data[key],sep);
+
+                for(var k in r){
+                    result[key+sep+k]=r[k];
+                }
+            }
+        }
+
+        return(result);
+    };
+
+    Base.flatten=function(data,path,sep){
+        return(Base.__flatten(Base.get(data,path,sep),sep));
+    };
+
     Base.remove=function(data,path,sep){
         sep=sep||'.';
         
