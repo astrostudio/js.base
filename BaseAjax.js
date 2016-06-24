@@ -69,7 +69,7 @@
         if(options.async){
             options.success=function(data,textStatus,jqXHR){
                 for(var i in callbacks){
-                    callbacks[i].call(this,data);
+                    callbacks[i].call(this,data,textStatus,jqXHR);
                 }
             };
 
@@ -82,7 +82,7 @@
             result=data;
 
             for(var i in callbacks){
-                callbacks[i].call(this,data);
+                callbacks[i].call(this,data,textStatus,jqXHR);
             }
         };
 

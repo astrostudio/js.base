@@ -206,5 +206,20 @@ var Base;
         
         return(data);
     };
+    Base.callback=function(callback,context,args){
+        if(!callback){
+            return;
+        }
+
+        if(typeof(callback)==='function'){
+            Base.callback([callback],context,args);
+
+            return;
+        }
+
+        for(var i in callback){
+            callback[i].apply(context,args);
+        }
+    }
     
 })();
