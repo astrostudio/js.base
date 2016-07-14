@@ -4,73 +4,77 @@
     }
 
     Base.Browser=function(id,options) {
+        options= $.extend({},options||{});
+
         this.id = id;
         this.listeners = new Base.Listeners(this);
+        this.params= $.extend({},{
+            page: 1,
+            limit: 10
+        },options.params||{});
 
-        if (typeof(options) === 'object') {
-            for (var i in options) {
-                this[i] = options[i];
-            }
-        }
+        $.extend(this,options);
 
-        $.extend(this, options);
+        var $browser=$('#'+this.id);
 
-        $('#' + this.id).data('baseBrowser', this);
+        $browser.addClass(Base.Browser.__class);
+        $browser.data(Base.Browser.__class, this);
 
         this.reload();
-    }
+    };
     Base.Browser.prototype.redraw=function(){
+        var self=this;
         var $browser=$('#'+this.id);
-        var this_=this;
 
         $browser.html('');
 
         for(var i in this.rows){
             var $row=$(this.render(this.rows[i]));
 
+            $row.addClass(Base.Browser.__class+'-row');
+            $row.data(Base.Browser.__class+'-row',this.rows[i]);
+
             $row.click(function(e){
-                if(typeof(this_.select)==='function'){
-                    this_.select.call(this_,this_.rows[i],e);
+                var $this=$(this);
+                var row=$this.data(Base.Browser.__class+'-row');
+
+                $this.parents(Base.Browser.__class).first().find('.'+Base.Browser.__class+'-row').removeClass(Base.Browser.__class+'-active');
+                $this.addClass(Base.Browser.__class+'-active');
+
+                if(typeof(self.select)==='function'){
+                    self.select.call(self,$this,row,e);
                 }
             });
 
             $browser.append($row);
         }
     };
-    Base.Browser.prototype.reload=function(options){
-        if(typeof(options)=='object'){
-            $.extend(this,options);
-        }
+    Base.Browser.prototype.reload=function(params){
+        params= $.extend({},{
+            page: 1,
+            limit: 10
+        },this.params||{},params||{});
 
         if(typeof(this.url)=='undefined'){
             return(false);
         }
 
-        this.page=this.page||1;
-        this.limit=this.limit||10;
-        this.sorter=this.sorter||'';
-        this.direction=this.direction||'';
-        this.search=this.search||'';
+        this.params=params;
 
-        var url=this.url+'?page='+this.page+'&rows='+this.limit+'&sorter='+this.sorter+'&sord='+this.direction+'&_filter='+this.search;
+        var self=this;
 
-        if(typeof(this.params)=='object'){
-            for(var i in this.params){
-                url+='&'+i+'='+this.params[i];
-            }
-        }
-
-        var this_=this;
-
-        $.getJSON(url,function(data){
+        $.getJSON(this.url,params,function(data){
             if(typeof(data)==='object'){
-                this_.rows=data.rows||[];
-                this_.page=data.page||1;
-                this_.page=parseInt(this_.page);
-                this_.total=data.total||0;
-                this_.pages=this_.total>0?Math.ceil(this_.total/this_.limit):0;
-                this_.redraw();
-                this_.listeners.update('reload');
+                self.rows=data.rows||[];
+                self.params.page=data.page||1;
+                self.params.page=parseInt(self.params.page);
+                self.count=data.count||0;
+                self.pages=self.count>0?Math.ceil(self.count/self.params.limit):0;
+                self.params.sorter=data.sorter;
+                self.params.filter=data.filter;
+                self.params.search=data.search;
+                self.redraw();
+                self.listeners.update('reload');
             }
         });
     };
@@ -85,94 +89,97 @@
 
         return($('<div>'+JSON.stringify(row)+'</div>'));
     };
+    Base.Browser.prototype.active=function(){
+        return($('#'+this.id).find('.'+Base.Browser.__class+'-row.'+Base.Browser.__class+'-active').first().data(Base.Browser.__class+'-row'));
+    };
 
-    Base.Browser.classPrefix='base-browser';
+    Base.Browser.__class='base-browser';
     Base.Browser.Pager=function(id,browser){
-        var this_=this;
+        var self=this;
         
         this.id=id;
         this.browser=browser;
         this.browser.listeners.append(function(){
-            console.log(this);
-            $pager.find('input.'+Base.Browser.classPrefix+'-page').val(this.page);
-            $pager.find('.'+Base.Browser.classPrefix+'-page').html(this.page);
-            $pager.find('.'+Base.Browser.classPrefix+'-sorter').val(this.sorter);
-            $pager.find('.'+Base.Browser.classPrefix+'-limit').val(this.limit);
-            $pager.find('.'+Base.Browser.classPrefix+'-pages').html(this.pages);
-            $pager.find('.'+Base.Browser.classPrefix+'-total').html(this.total);
+            $pager.find('input.'+Base.Browser.__class+'-page').val(this.params.page);
+            $pager.find('.'+Base.Browser.__class+'-page').html(this.params.page);
+            $pager.find('.'+Base.Browser.__class+'-sorter').val(this.params.sorter);
+            $pager.find('.'+Base.Browser.__class+'-filter').val(this.params.filter);
+            $pager.find('.'+Base.Browser.__class+'-limit').val(this.params.limit);
+            $pager.find('.'+Base.Browser.__class+'-search').val(this.params.search);
+            $pager.find('.'+Base.Browser.__class+'-pages').html(this.pages);
+            $pager.find('.'+Base.Browser.__class+'-count').html(this.count);
         });
         
         var $pager=$('#'+this.id);
+
+        $pager.addClass(Base.Browser.__class+'-pager');
+        $pager.data(Base.Browser.__class+'-pager',this);
         
-        $pager.find('.'+Base.Browser.classPrefix+'-first').click(function(e){
+        $pager.find('.'+Base.Browser.__class+'-first').click(function(e){
             e.preventDefault();
             
-            this_.browser.reload({page:1});
+            self.browser.reload({page:1});
         });
         
-        $pager.find('.'+Base.Browser.classPrefix+'-prev').click(function(e){
+        $pager.find('.'+Base.Browser.__class+'-prev').click(function(e){
             e.preventDefault();
             
-            if(this_.browser.page>1){
-                this_.browser.reload({page:this_.browser.page-1});
+            if(self.browser.params.page>1){
+                self.browser.reload({page:self.browser.params.page-1});
             }
         });
         
-        $pager.find('.'+Base.Browser.classPrefix+'-next').click(function(e){
+        $pager.find('.'+Base.Browser.__class+'-next').click(function(e){
             e.preventDefault();
             
-            if(this_.browser.page<this_.browser.pages){
-                this_.browser.reload({page:this_.browser.page+1});
+            if(self.browser.params.page<self.browser.pages){
+                self.browser.reload({page:self.browser.params.page+1});
             }
         });
         
-        $pager.find('.'+Base.Browser.classPrefix+'-last').click(function(e){
+        $pager.find('.'+Base.Browser.__class+'-last').click(function(e){
             e.preventDefault();
             
-            this_.browser.reload({page:this_.browser.pages});
+            self.browser.reload({page:self.browser.pages});
         });
         
-        $pager.find('.'+Base.Browser.classPrefix+'-page').click(function(e){
+        $pager.find('.'+Base.Browser.__class+'-page').click(function(e){
             e.preventDefault();
             
-            this_.browser.reload({page:$(this).val()});
+            self.browser.reload({page:$(this).val()});
         });
         
-        $pager.find('.'+Base.Browser.classPrefix+'-direction').click(function(e){
-            e.preventDefault();
-            
-            this_.browser.reload({direction:this_.browser.direction=='dsc'?'asc':'dsc'});
+        $pager.find('.'+Base.Browser.__class+'-sorter').change(function(){
+            self.browser.reload({sorter:$(this).val()});
         });
         
-        $pager.find('.'+Base.Browser.classPrefix+'-sorter').change(function(){
-            this_.browser.reload({sorter:$(this).val()});
+        $pager.find('.'+Base.Browser.__class+'-filter').change(function(){
+            self.browser.reload({filter:$(this).val()});
         });
         
-        $pager.find('.'+Base.Browser.classPrefix+'-filter').change(function(){
-            this_.browser.reload({filter:$(this).val()});
-        });
-        
-        $pager.find('.'+Base.Browser.classPrefix+'-limit').change(function(){
-            this_.browser.reload({limit:$(this).val()});
+        $pager.find('.'+Base.Browser.__class+'-limit').change(function(){
+            self.browser.reload({limit:$(this).val()});
         });
 
-        $pager.find('.'+Base.Browser.classPrefix+'-search').keydown(function(e){
+        $pager.find('.'+Base.Browser.__class+'-search').keydown(function(e){
             if(e.keyCode==13){
-                this_.browser.reload({search:$(this).val()});
+                self.browser.reload({search:$(this).val()});
             }
         });
         
-        $pager.find('.'+Base.Browser.classPrefix+'-form').submit(function(e){
+        $pager.find('.'+Base.Browser.__class+'-form').submit(function(e){
             e.preventDefault();
             
-            var s=$pager.find('.'+Base.Browser.classPrefix+'-search').val();
+            var s=$pager.find('.'+Base.Browser.__class+'-search').val();
             
             if(s){            
-                this_.browser.reload({search:s});
+                self.browser.reload({search:s});
             }
         });
-                
-        $pager.data('baseBrowserPager',this);
+
+        $pager.find('form').submit(function(e){
+            e.preventDefault();
+        });
     };
     
     Base.Browser.set=function(id,options){

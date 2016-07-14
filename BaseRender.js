@@ -13,7 +13,7 @@
     $x.base('render',{xyz:'text'},'#');
     $x.base('render',{xyz:'text'},{xyz:'.xyz'});
     */
-    
+
     $.base('plugin','render',function(){
         var args=Array.prototype.slice.call(arguments);
 
@@ -79,5 +79,34 @@
             }
         }));
     });
+
+    $.base('plugin','renderFill',function(){
+        var args=Array.prototype.slice.call(arguments);
+
+        return(this.each(function(){
+            if(args.length>0) {
+                if (typeof(args[0]) === 'object') {
+                    var html=$(this).html();
+                    var exp=new RegExp(/\{\{[a-zA-Z0-9]+\}\}/g);
+                    var match=html.match(exp);
+
+                    if(match){
+                        for(var i in match){
+                            var expr=match[i].substr(2,match[i].length-4);
+                            var body=Base.get(args[0],expr);
+
+                            body=body||'';
+
+                            html=html.replace(match[i],body);
+                        }
+                    }
+
+                    $(this).html(html);
+                }
+            }
+        }));
+    });
+
+
 
 })(Base,jQuery);
