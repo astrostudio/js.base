@@ -1,77 +1,73 @@
 (function(Base,$){
 
-    Base.Form=function(id,items,data){
-        this.id=id;
-        this.data={};
-        this.items=items;
-        this.listeners=new Base.Listeners(this);
+    if(!Base.View){
+        alert('BaseView required!');
+    }
 
-        if(data){
-            this.setData(data);
-        }
-    };
-    Base.Form.prototype.getData=function(){
-        var data=this.data;
+    Base.Form=function(id,options){
+        Base.View.prototype.constructor.call(this,id, $.extend({},{
+            items: {}
+        },options||{}));
 
-        for(key in this.items){
-            item.getData(data);
-        }
+        $('#'+this.id).addClass(Base.Form.__class);
     };
-    Base.Form.prototype.setData=function(data){
-        this.data=data;
-
-        for(key in this.items){
-            item.setData(data);
-        }
-    };
-    Base.Form.prototype.get=function(path,def){
-        return(Base.get(this.data,path,def));
-    };
-    Base.Form.prototype.set=function(path,value){
-        Base.set(this.data,path,value);
-    };
+    Base.extend(Base.Form,Base.View);
     Base.Form.prototype.render=function(){
         var $form=$('#'+this.id);
 
-        $form.html('');
-
-        for(var key in this.options.items){
-            var item=this.options.items[key];
-            var $item=item.render();
+        for(var key in this.items){
+            var $item=this.items[key].render();
 
             $form.append($item);
         }
     };
+    Base.Form.prototype.getData=function(data){
+        data=data||{};
 
-    Base.Form.Item=function(){
-    };
-    Base.Form.Item.prototype.getData=function(data){
-    };
-    Base.Form.Item.prototype.setData=function(data){
-    };
-    Base.Form.Item.prototype.render=function(){
-    };
-
-    Base.Form.Input=function(options){
-        $.extend(this,options|{});
-    };
-    Base.extend(Base.Form.Input,Base.Form.Item);
-    Base.Form.Input.prototype.getData=function(data){
-        if(this.path && this.input){
-            Base.set(data,path,$(this.input).val());
+        for(var key in this.items){
+            this.items[key].getData(data);
         }
     };
-    Base.Form.Input.prototype.setData=function(data){
-        if(this.path && this.input){
-            $(this.input).val(Base.get(data,this.path));
-            $(this.input).change();
+    Base.Form.prototype.setData=function(data){
+        data=data||{};
+
+        for(var key in this.items){
+            this.items[key].setData(data);
         }
     };
-    Base.Form.Input.prototype.render=function(){
-        var template=this.template||'<input />';
-        var $input=$(template);
+    Base.Form.prototype.setErrors=function(errors){
 
-        return($input);
     };
+    Base.Form.prototype.submit=function(){
+        var self=this;
+        var data=this.data||{};
+
+        this.getData(data);
+
+        if(this.url){
+            Base.Api.ajax(this.url,data,this.type || 'post',function(response){
+                if(response.ok()){
+                    self.setData(response.data);
+
+                    return;
+                }
+
+                if(response.errors){
+                    self.setError(response.errors);
+                }
+            });
+        }
+    };
+
+    Base.Form.__class='base-form';
+
+    Base.Form.Item=function(id,options){
+        Base.View.prototype.constructor.call(this,id,options);
+
+        $('#'+this.id).addClass(Base.Form.Item.__class);
+    };
+    Base.extend(Base.Form.Item,Base.View);
+
+    Base.Form.Item.__class='base-form-item';
 
 })(Base,jQuery);

@@ -38,7 +38,7 @@
                 var $this=$(this);
                 var row=$this.data(Base.Browser.__class+'-row');
 
-                $this.parents(Base.Browser.__class).first().find('.'+Base.Browser.__class+'-row').removeClass(Base.Browser.__class+'-active');
+                $this.parents('.'+Base.Browser.__class).first().find('.'+Base.Browser.__class+'-row').removeClass(Base.Browser.__class+'-active');
                 $this.addClass(Base.Browser.__class+'-active');
 
                 if(typeof(self.select)==='function'){

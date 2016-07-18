@@ -1,13 +1,16 @@
 (function(Base,$){
 
-    Base.View=function(id){
+    Base.View=function(id,options){
         this.id=id;
         this.data=null;
         this.listeners=new Base.Listeners(this);
 
+        $.extend(this,options||{});
+
         var $view=$('#'+id);
 
-        $view.addClass(Base.View.prefix+'view');
+        $view.addClass(Base.View.__class);
+        $view.data(Base.View.__class,this);
     };
     Base.View.prototype.setData=function(data){
         this.data=data;
@@ -17,7 +20,7 @@
         var self=this;
         var $view=$('#'+this.id);
 
-        $view.find('.'+Base.View.prefix+'view').each(function(){
+        $view.find('.'+Base.View.__class).each(function(){
             var path=$(this).attr('data-path');
 
             if(typeof(self.data)==='object') {
@@ -35,6 +38,6 @@
         this.listeners.update();
     };
 
-    Base.View.prefix='base-';
+    Base.View.__class='base-view';
 
 })(Base,jQuery);
