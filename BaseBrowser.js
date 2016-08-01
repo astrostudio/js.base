@@ -3,19 +3,20 @@
         alert('Base.Listeners required');
     }
 
-    Base.Browser=function(id,options) {
+    Base.Browser=function(element,options) {
         options= $.extend({},options||{});
 
-        this.id = id;
+        this.element = element;
         this.listeners = new Base.Listeners(this);
         this.params= $.extend({},{
             page: 1,
             limit: 10
         },options.params||{});
+        this.multiselect=false;
 
         $.extend(this,options);
 
-        var $browser=$('#'+this.id);
+        var $browser=$(this.element);
 
         $browser.addClass(Base.Browser.__class);
         $browser.data(Base.Browser.__class, this);
@@ -24,7 +25,7 @@
     };
     Base.Browser.prototype.redraw=function(){
         var self=this;
-        var $browser=$('#'+this.id);
+        var $browser=$(this.element);
 
         $browser.html('');
 
@@ -38,11 +39,32 @@
                 var $this=$(this);
                 var row=$this.data(Base.Browser.__class+'-row');
 
-                $this.parents('.'+Base.Browser.__class).first().find('.'+Base.Browser.__class+'-row').removeClass(Base.Browser.__class+'-active');
-                $this.addClass(Base.Browser.__class+'-active');
+                if(!self.multiselect){
+                    $this.parents('.' + Base.Browser.__class).first().find('.' + Base.Browser.__class + '-row').removeClass(Base.Browser.__class + '-active');
+                }
+
+                var accept=true;
+                var select=!$this.hasClass(Base.Browser.__class+'-active');
+
+                if(typeof(self.beforeSelect)==='function'){
+                    accept=self.beforeSelect.call(self,$this,row,select,e);
+                }
+
+                if(accept){
+                    if(select){
+                        $this.addClass(Base.Browser.__class+'-active');
+                    }
+                    else {
+                        $this.removeClass(Base.Browser.__class+'-active');
+                    }
+                }
+
+                if(typeof(self.afterSelect)==='function'){
+                    self.afterSelect.call(self,$this,row,select,e);
+                }
 
                 if(typeof(self.select)==='function'){
-                    self.select.call(self,$this,row,e);
+                    self.select.call(self,$this,row,select,e);
                 }
             });
 
@@ -89,15 +111,25 @@
 
         return($('<div>'+JSON.stringify(row)+'</div>'));
     };
-    Base.Browser.prototype.active=function(){
-        return($('#'+this.id).find('.'+Base.Browser.__class+'-row.'+Base.Browser.__class+'-active').first().data(Base.Browser.__class+'-row'));
+    Base.Browser.prototype.active=function(delimiter){
+        if(this.multiselect){
+            var actives=[];
+
+            $(this.element).find('.'+Base.Browser.__class+'-row.'+Base.Browser.__class+'-active').each(function(){
+                actives.push($(this).data(Base.Browser.__class+'-row'));
+            });
+
+            return(actives);
+        }
+
+        return($(this.element).find('.'+Base.Browser.__class+'-row.'+Base.Browser.__class+'-active').first().data(Base.Browser.__class+'-row'));
     };
 
     Base.Browser.__class='base-browser';
-    Base.Browser.Pager=function(id,browser){
+    Base.Browser.Pager=function(element,browser){
         var self=this;
         
-        this.id=id;
+        this.element=element;
         this.browser=browser;
         this.browser.listeners.append(function(){
             $pager.find('input.'+Base.Browser.__class+'-page').val(this.params.page);
@@ -110,7 +142,7 @@
             $pager.find('.'+Base.Browser.__class+'-count').html(this.count);
         });
         
-        var $pager=$('#'+this.id);
+        var $pager=$(this.element);
 
         $pager.addClass(Base.Browser.__class+'-pager');
         $pager.data(Base.Browser.__class+'-pager',this);

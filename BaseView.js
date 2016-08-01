@@ -1,13 +1,13 @@
 (function(Base,$){
 
-    Base.View=function(id,options){
-        this.id=id;
+    Base.View=function(element,options){
+        this.element=element;
         this.data=null;
         this.listeners=new Base.Listeners(this);
 
         $.extend(this,options||{});
 
-        var $view=$('#'+id);
+        var $view=$(this.element);
 
         $view.addClass(Base.View.__class);
         $view.data(Base.View.__class,this);
@@ -18,7 +18,7 @@
     };
     Base.View.prototype.render=function(){
         var self=this;
-        var $view=$('#'+this.id);
+        var $view=$(this.element);
 
         $view.find('.'+Base.View.__class).each(function(){
             var path=$(this).attr('data-path');

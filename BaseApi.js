@@ -82,5 +82,8 @@
     Base.Api.patch=function(url,params,callback){
         return(Base.Api.ajax(url,params,'PATCH',callback));
     };
+    Base.Api.submit=function(form,url,callback){
+        return(Base.Ajax.Form.post(form,Base.Api.prefix+url,{dataType: 'json'}, callback));
+    };
 
 })(Base,jQuery);

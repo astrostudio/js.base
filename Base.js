@@ -220,6 +220,24 @@ var Base;
         for(var i in callback){
             callback[i].apply(context,args);
         }
-    }
-    
+    };
+    Base.uniqid=function (prefix, en) {
+        var result;
+
+        prefix=prefix||'';
+        en=en||false;
+
+        this.seed = function (s, w) {
+            s = parseInt(s, 10).toString(16);
+            return w < s.length ? s.slice(s.length - w) : (w > s.length) ? new Array(1 + (w - s.length)).join('0') + s : s;
+        };
+
+        result = prefix + this.seed(parseInt(new Date().getTime() / 1000, 10), 8) + this.seed(Math.floor(Math.random() * 0x75bcd15) + 1, 5);
+
+        if (en) {
+            result += (Math.random() * 10).toFixed(8).toString();
+        }
+
+        return(result);
+    };
 })();
