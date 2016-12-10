@@ -1,7 +1,67 @@
 var Base;
 
 (function(){
-    Base={};
+    Base=function(){
+        if(arguments[0] && typeof(arguments[0])==='object'){
+            this.extend(arguments[0]);
+        }
+    };
+    Base.prototype.extend=function(source,value){
+        if(typeof(source)==='object'){
+            var extend=Base.prototype.extend;
+
+            for(var key in source){
+                extend.call(this,key,source[key]);
+            }
+        }
+        else if(arguments.length>1){
+            this[source]=value;
+        }
+
+        return(this);
+    };
+    Base.extend=function(define,statics,n){
+        var proto=new this;
+        var extend=Base.prototype.extend;
+
+        proto.extend(define);
+
+        var constructor=proto.constructor;
+        var child=function(){
+            constructor.apply(this,arguments);
+        };
+
+        child.prototype=proto;
+
+        extend.call(child,this);
+
+        child.extend=this.extend;
+
+        statics=statics||{};
+
+        extend.call(child,statics);
+
+        return(child);
+    };
+
+    Base.arg=function(args,i,type){
+        var j=0;
+        var k=0;
+
+        while(j<args.length){
+            if(typeof(args[j])===type){
+                ++k;
+
+                if(k==i){
+                    return(j);
+                }
+            }
+
+            ++j;
+        }
+
+        return(-1);
+    };
 
     Base.required=function(path){
         if(!Base.has(Base,path)){
@@ -21,11 +81,6 @@ var Base;
         }
         
         return(view);
-    };
-
-    Base.extend=function(child,parent){
-        child.prototype=Object.create(parent.prototype);
-        child.prototype.constructor=child;
     };
 
     Base.cookie=function(name,value,time,domain){
@@ -70,19 +125,21 @@ var Base;
         if(!path){
             return(data);
         }
+
+        if(typeof(path)=='string') {
+            path = path.split(sep);
+        }
         
-        var apath=path.split(sep);
-        
-        for(var key in apath){
+        for(var key in path){
             if(!(data instanceof Object)){
                 return(false);
             }
             
-            if(!(apath[key] in data)){
+            if(!(path[key] in data)){
                 return(false);
             }
                 
-            data=data[apath[key]];
+            data=data[path[key]];
         }
         
         return(true);
@@ -94,23 +151,25 @@ var Base;
         if(!path){
             return(data);
         }
-        
-        var apath=path.split(sep);
-        
-        for(var key in apath){
+
+        if(typeof(path)==='string') {
+            path = path.split(sep);
+        }
+
+        for(var key in path){
             if(!(data instanceof Object)){
                 return(def);
             }
             
-            if(!(apath[key] in data)){
+            if(!(path[key] in data)){
                 return(def);
             }
             
-            if(data[apath[key]]==null){
+            if(data[path[key]]==null){
                 return(def);
             }
                 
-            data=data[apath[key]];
+            data=data[path[key]];
         }
         
         return(data);
@@ -123,25 +182,28 @@ var Base;
         if(!path){
             return(data);
         }
-        
-        var apath=path.split(sep);
+
+        if(typeof(path)==='string') {
+            path = path.split(sep);
+        }
+
         var key0=null;
         var data0=null;
         var data1=data;
         
-        for(var key in apath){
+        for(var key in path){
             if(!(data1 instanceof Object)){                
                 return(data);
             }
             
-            if(!(apath[key] in data1)){
-                data1[apath[key]]={};
+            if(!(path[key] in data1)){
+                data1[path[key]]={};
             }
                 
             data0=data1;
-            key0=apath[key];
+            key0=path[key];
             
-            data1=data1[apath[key]];
+            data1=data1[path[key]];
         }
         
         if(data0 && key0){
@@ -174,30 +236,51 @@ var Base;
         return(Base.__flatten(Base.get(data,path,sep),sep));
     };
 
+    Base.path2name=function(prefix,path,sep){
+        sep=sep||'.';
+
+        if(typeof(path)==='string'){
+            path=path.split(sep);
+        }
+
+        var name=prefix;
+
+        if(path.length>0){
+            for(var i in path) {
+                name+='['+path[i]+']';
+            }
+        }
+
+        return(name);
+    };
+
     Base.remove=function(data,path,sep){
         sep=sep||'.';
         
         if(!path){
             return(data);
         }
-        
-        var apath=path.split(sep);
+
+        if(typeof(path)==='string') {
+            path = path.split(sep);
+        }
+
         var key0=null;
         var data0=null;
         
-        for(var key in apath){
+        for(var key in path){
             if(!(data instanceof Object)){
                 return(data);
             }
             
-            if(!(apath[key] in data)){
+            if(!(path[key] in data)){
                 return(data);
             }
                 
             data0=data;
-            key0=apath[key];
+            key0=path[key];
             
-            data=data[apath[key]];
+            data=data[path[key]];
         }
         
         if(data0 && key0){
@@ -206,6 +289,7 @@ var Base;
         
         return(data);
     };
+
     Base.callback=function(callback,context,args){
         if(!callback){
             return;
@@ -221,6 +305,7 @@ var Base;
             callback[i].apply(context,args);
         }
     };
+
     Base.uniqid=function (prefix, en) {
         var result;
 
@@ -240,4 +325,170 @@ var Base;
 
         return(result);
     };
+
+    Base.evaluate=function(data,params,value){
+        if(!data){
+            return(value);
+        }
+
+        if(typeof(data)==='function'){
+            return(data.apply(this,params));
+        }
+
+        return(data);
+    };
+
+    Base.Listeners=Base.extend({
+        constructor: function(context){
+            Base.call(this);
+
+            this.context=context;
+            this.items=[];
+            this.updating=false;
+        },
+        append: function(listener){
+            this.items.push(listener);
+        },
+        remove: function(listener){
+            var i=this.items.indexOf(listener);
+
+            if(i>=0){
+                this.items.splice(i,1);
+            }
+        },
+        update: function(){
+            if(!this.updating){
+                this.updating=true;
+
+                for(var key in this.items){
+                    this.items[key].apply(this.context,arguments);
+                }
+
+                this.updating=false;
+            }
+        }
+    });
+
+    Base.Timer=Base.extend({
+        constructor: function(interval,callback){
+            Base.call(this);
+
+            this.interval=interval;
+            this.listeners=new Base.Listeners(this);
+
+            if(callback){
+                this.listeners.append(callback);
+            }
+
+            this.__interval=false;
+        },
+        start: function(){
+            var self=this;
+
+            this.stop();
+            this.__interval=setInterval(function(){
+                self.listeners.update();
+            },this.interval);
+        },
+        stop: function(){
+            if(this.__interval){
+                clearInterva(this.__interval);
+
+                this.__interval=false;
+            }
+        },
+        update: function(){
+            this.listeners.update();
+        }
+    });
+
+    Base.Locale=Base.extend({
+        constructor: function(values){
+            Base.call(this);
+
+            this.values=values||{};
+        },
+        get: function(locale,space,alias,value){
+            if(!locale){
+                return(this.values);
+            }
+
+            if(!space){
+                return(Base.get(this.values,[locale],{}));
+            }
+
+            if(!alias){
+                return(Base.get(this.values,[locale,space]));
+            }
+
+            return(Base.get(this.values,[locale,space,alias],value));
+        },
+        set: function(locale,space,alias,value){
+            if(typeof(locale)==='object'){
+                this.values=locale;
+
+                return(true);
+            }
+
+            if(typeof(locale)!=='string'){
+                return(false);
+            }
+
+            if(!space){
+                return(Base.remove(this.values,[locale]));
+            }
+
+            if(typeof(space)==='object'){
+                return(Base.set(this.values,[locale],space));
+            }
+
+            if(typeof(space)!=='string'){
+                return(false);
+            }
+
+            if(!alias){
+                return(Base.remove(this.values,[locale,space]));
+            }
+
+            if(typeof(alias)==='object'){
+                return(Base.set(this.values,[locale,space],alias));
+            }
+
+            if(typeof(alias)!=='string'){
+                return(false);
+            }
+
+            if(!values){
+                return(Base.remove(this.values,[locale,space,alias]));
+            }
+
+            if(value){
+                return(Base.set(this.values,[locale,space,alias],value));
+            }
+
+            return(Base.remove(this.values,[locale,space,alias]));
+        }
+    },{
+        __locale: 'pl',
+        getInstance: function(){
+            if(!Base.Locale.__instance){
+                Base.Locale.__instance=new Base.Locale()
+            }
+
+            return(Base.Locale.__instance);
+        },
+        getLocale: function(){
+            return(Base.Locale.__locale);
+        },
+        setLocale: function(locale){
+            Base.Locale.__locale=locale;
+        },
+        get: function(space,alias,value,locale){
+            return(Base.Locale.getInstance().get(locale||Base.Locale.__locale,space,alias,value));
+        },
+        set: function(space,alias,value,locale){
+            return(Base.Locale.getInstance().set(locale||Base.Locale.__locale,space,alias,value));
+        }
+    });
+
 })();
