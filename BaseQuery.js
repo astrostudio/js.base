@@ -47,6 +47,11 @@
                         callbacks[i].call(this,data,textStatus,jqXHR);
                     }
                 };
+                options.error=function(jqXHR,textStatus){
+                    for(var i in callbacks){
+                        callbacks[i].call(this,jqXHR.responseJSON,textStatus,jqXHR);
+                    }
+                };
 
                 return($.ajax(options));
             }
@@ -58,6 +63,13 @@
 
                 for(var i in callbacks){
                     callbacks[i].call(this,data,textStatus,jqXHR);
+                }
+            };
+            options.error=function(jqXHR,textStatus){
+                result=jqXHR.responseJSON;
+
+                for(var i in callbacks){
+                    callbacks[i].call(this,jqXHR.responseJSON,textStatus,jqXHR);
                 }
             };
 
