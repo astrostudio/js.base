@@ -270,7 +270,7 @@
     
     $.fn.base=function(){
         if(arguments.length>0){
-            if(typeof arguments[0]=='Object'){
+            if(typeof arguments[0]=='object'){
                 options=$.extend(options,arguments[0]);
                 
                 return(this);
@@ -345,9 +345,9 @@
                 }));
             }
 
-            return(this.find('[base-path]').each(function(){
+            return(this.find('[data-path]').each(function(){
                 var $this=$(this);
-                var path=$this.attr('base-path');
+                var path=$this.attr('data-path');
 
                 if(path){
                     switch(type){
@@ -434,9 +434,9 @@
             });
         }
 
-        this.find('[base-path]').each(function(){
+        this.find('[data-path]').each(function(){
             var $this=$(this);
-            var path=$this.attr('base-path');
+            var path=$this.attr('data-path');
 
             if(path){
                 switch(type){

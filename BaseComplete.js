@@ -8,13 +8,15 @@
                 
         return(this.each(function(){
             var $this=$(this);
-            
-            $this.on('input',function(){       
-                $('#base-complete').hide();
-                $('#base-complete').html('');
+            var $complete=$('#base-complete');
+
+            $this.on('input',function(){
                 var url=options.url;
-                
-                url=Base.replace(url,'%QUERY%',$this.val());                
+
+                $complete.hide();
+                $complete.html('');
+
+                url=Base.replace(url,'%QUERY%',$this.val());
                 url=Base.replace(url,'%LIMIT%',options.limit||20);
                 
                 Base.json(url,function(data){
@@ -30,14 +32,14 @@
                     
                     var offset=$this.offset();
                     
-                    $('#base-complete').css({left:offset.left,top:offset.top+$this.height()});
+                    $complete.css({left:offset.left,top:offset.top+$this.height()});
                     
-                    $('#base-complete').show();
+                    $complete.show();
                 });
             });
             
             $this.change(function(){
-                $('#base-complete').hide();
+                $complete.hide();
             });
         }));
     });
@@ -47,4 +49,3 @@
     });
     
 })(Base,jQuery);
-
